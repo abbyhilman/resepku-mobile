@@ -1,0 +1,16 @@
+flutter_native_splash:
+  color: "#FF6B35"
+  
+  # Android 12+ settings
+  android_12:
+    color: "#FF6B35"
+    icon_background_color: "#FF6B35"
+
+  # iOS settings  
+  ios: true
+  
+  # Web settings
+  web: false
+  
+  # Full screen mode
+  fullscreen: true
