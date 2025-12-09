@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import '../models/user_model.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_error_handler.dart';
 import '../../core/storage/local_storage.dart';
 
 class AuthRepository {
@@ -14,15 +16,23 @@ class AuthRepository {
     required String password,
     required String fullName,
   }) async {
-    final response = await _dioClient.post(
-      ApiEndpoints.register,
-      data: {'email': email, 'password': password, 'full_name': fullName},
-    );
+    try {
+      final response = await _dioClient.post(
+        ApiEndpoints.register,
+        data: {'email': email, 'password': password, 'full_name': fullName},
+      );
 
-    if (response.data['success'] == true) {
-      return UserModel.fromJson(response.data['data']);
-    } else {
-      throw Exception(response.data['message'] ?? 'Registrasi gagal');
+      if (response.data['success'] == true) {
+        return UserModel.fromJson(response.data['data']);
+      } else {
+        throw Exception(
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Registrasi gagal',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 
@@ -30,22 +40,28 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _dioClient.post(
-      ApiEndpoints.login,
-      data: {'email': email, 'password': password},
-    );
+    try {
+      final response = await _dioClient.post(
+        ApiEndpoints.login,
+        data: {'email': email, 'password': password},
+      );
 
-    if (response.data['success'] == true) {
-      final token = response.data['data']['token'] as String;
-      final user = UserModel.fromJson(response.data['data']['user']);
+      if (response.data['success'] == true) {
+        final token = response.data['data']['token'] as String;
+        final user = UserModel.fromJson(response.data['data']['user']);
 
-      // Save token and user to local storage
-      await _localStorage.saveToken(token);
-      await _localStorage.saveUser(user);
+        // Save token and user to local storage
+        await _localStorage.saveToken(token);
+        await _localStorage.saveUser(user);
 
-      return user;
-    } else {
-      throw Exception(response.data['message'] ?? 'Login gagal');
+        return user;
+      } else {
+        throw Exception(
+          ApiErrorHandler.translate(response.data['message'] ?? 'Login gagal'),
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 

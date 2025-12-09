@@ -3,6 +3,7 @@ import '../models/recipe_model.dart';
 import '../models/api_response.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_error_handler.dart';
 
 class RecipeRepository {
   final DioClient _dioClient;
@@ -35,23 +36,15 @@ class RecipeRepository {
           (json) => RecipeModel.fromJson(json),
         );
       } else {
-        throw Exception(response.data['message'] ?? 'Gagal memuat resep');
+        throw Exception(
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Gagal memuat resep',
+          ),
+        );
       }
     } on DioException catch (e) {
       print('❌ Error in getRecipes: $e');
-      if (e.response?.statusCode == 500) {
-        throw Exception(
-          'Server sedang mengalami masalah. Silakan coba lagi dalam beberapa saat.',
-        );
-      } else if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        throw Exception('Koneksi timeout. Periksa koneksi internet Anda.');
-      } else if (e.type == DioExceptionType.connectionError) {
-        throw Exception(
-          'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
-        );
-      }
-      throw Exception(e.response?.data['message'] ?? 'Gagal memuat resep');
+      throw Exception(ApiErrorHandler.handleDioError(e));
     } catch (e) {
       print('❌ Unexpected error in getRecipes: $e');
       rethrow;
@@ -66,17 +59,14 @@ class RecipeRepository {
       if (response.data['success'] == true) {
         return RecipeModel.fromJson(response.data['data']);
       } else {
-        throw Exception(response.data['message'] ?? 'Resep tidak ditemukan');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw Exception('Resep tidak ditemukan');
-      } else if (e.response?.statusCode == 500) {
         throw Exception(
-          'Server sedang mengalami masalah. Silakan coba lagi dalam beberapa saat.',
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Resep tidak ditemukan',
+          ),
         );
       }
-      throw Exception(e.response?.data['message'] ?? 'Gagal memuat resep');
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 
@@ -93,15 +83,14 @@ class RecipeRepository {
             .map((e) => RecipeModel.fromJson(e as Map<String, dynamic>))
             .toList();
       } else {
-        throw Exception(response.data['message'] ?? 'Pencarian gagal');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 500) {
         throw Exception(
-          'Server sedang mengalami masalah. Silakan coba lagi dalam beberapa saat.',
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Pencarian gagal',
+          ),
         );
       }
-      throw Exception(e.response?.data['message'] ?? 'Pencarian gagal');
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 }

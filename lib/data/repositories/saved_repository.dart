@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import '../models/recipe_model.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_error_handler.dart';
 
 class SavedRecipeModel {
   final int id;
@@ -44,39 +46,59 @@ class SavedRepository {
   SavedRepository(this._dioClient);
 
   Future<List<SavedRecipeModel>> getSavedRecipes() async {
-    final response = await _dioClient.get(ApiEndpoints.savedRecipes);
+    try {
+      final response = await _dioClient.get(ApiEndpoints.savedRecipes);
 
-    if (response.data['success'] == true) {
-      return (response.data['data'] as List)
-          .map((e) => SavedRecipeModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception(
-        response.data['message'] ?? 'Gagal memuat resep tersimpan',
-      );
+      if (response.data['success'] == true) {
+        return (response.data['data'] as List)
+            .map((e) => SavedRecipeModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception(
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Gagal memuat resep tersimpan',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 
   Future<void> saveRecipe(int recipeId) async {
-    final response = await _dioClient.post(
-      ApiEndpoints.savedRecipes,
-      data: {'recipe_id': recipeId},
-    );
+    try {
+      final response = await _dioClient.post(
+        ApiEndpoints.savedRecipes,
+        data: {'recipe_id': recipeId},
+      );
 
-    if (response.data['success'] != true) {
-      throw Exception(response.data['message'] ?? 'Gagal menyimpan resep');
+      if (response.data['success'] != true) {
+        throw Exception(
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Gagal menyimpan resep',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 
   Future<void> removeSavedRecipe(int recipeId) async {
-    final response = await _dioClient.delete(
-      ApiEndpoints.removeSavedRecipe(recipeId),
-    );
-
-    if (response.data['success'] != true) {
-      throw Exception(
-        response.data['message'] ?? 'Gagal menghapus resep dari favorit',
+    try {
+      final response = await _dioClient.delete(
+        ApiEndpoints.removeSavedRecipe(recipeId),
       );
+
+      if (response.data['success'] != true) {
+        throw Exception(
+          ApiErrorHandler.translate(
+            response.data['message'] ?? 'Gagal menghapus resep dari favorit',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleDioError(e));
     }
   }
 }
