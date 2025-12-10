@@ -7,6 +7,7 @@ import '../../blocs/recipe/recipe_bloc.dart';
 import '../../blocs/recipe/recipe_state.dart';
 import '../../blocs/recipe/recipe_event.dart';
 import '../../widgets/recipe_card.dart';
+import '../../widgets/shimmer_widgets.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -99,10 +100,11 @@ class _SearchScreenState extends State<SearchScreen> {
               child: BlocBuilder<RecipeBloc, RecipeState>(
                 builder: (context, state) {
                   if (state is RecipeLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: 4,
+                      itemBuilder: (context, index) =>
+                          const ShimmerRecipeCard(),
                     );
                   }
 

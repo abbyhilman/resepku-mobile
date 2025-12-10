@@ -7,6 +7,7 @@ import '../../blocs/recipe/recipe_bloc.dart';
 import '../../blocs/recipe/recipe_state.dart';
 import '../../blocs/recipe/recipe_event.dart';
 import '../../widgets/recipe_card.dart';
+import '../../widgets/shimmer_widgets.dart';
 
 class AllRecipesScreen extends StatefulWidget {
   const AllRecipesScreen({super.key});
@@ -80,8 +81,10 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
       body: BlocBuilder<RecipeBloc, RecipeState>(
         builder: (context, state) {
           if (state is RecipeLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+            return ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: 5,
+              itemBuilder: (context, index) => const ShimmerRecipeCard(),
             );
           }
 

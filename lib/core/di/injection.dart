@@ -2,7 +2,9 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/dio_client.dart';
+import '../network/connectivity_helper.dart';
 import '../storage/local_storage.dart';
+import '../database/database_helper.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/saved_repository.dart';
@@ -24,6 +26,12 @@ Future<void> setupDependencies() async {
     LocalStorage(getIt<SharedPreferences>()),
   );
 
+  // Database Helper (SQLite)
+  getIt.registerSingleton<DatabaseHelper>(DatabaseHelper());
+
+  // Connectivity Helper
+  getIt.registerSingleton<ConnectivityHelper>(ConnectivityHelper());
+
   // Dio Client
   getIt.registerSingleton<DioClient>(DioClient(getIt<LocalStorage>()));
 
@@ -33,10 +41,20 @@ Future<void> setupDependencies() async {
   );
 
   getIt.registerSingleton<RecipeRepository>(
-    RecipeRepository(getIt<DioClient>()),
+    RecipeRepository(
+      getIt<DioClient>(),
+      getIt<DatabaseHelper>(),
+      getIt<ConnectivityHelper>(),
+    ),
   );
 
-  getIt.registerSingleton<SavedRepository>(SavedRepository(getIt<DioClient>()));
+  getIt.registerSingleton<SavedRepository>(
+    SavedRepository(
+      getIt<DioClient>(),
+      getIt<DatabaseHelper>(),
+      getIt<ConnectivityHelper>(),
+    ),
+  );
 
   getIt.registerSingleton<ReviewRepository>(
     ReviewRepository(getIt<DioClient>()),

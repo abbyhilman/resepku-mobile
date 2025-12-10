@@ -9,10 +9,18 @@ import '../../blocs/saved/saved_bloc.dart';
 import '../../blocs/saved/saved_state.dart';
 import '../../blocs/saved/saved_event.dart';
 import '../../widgets/recipe_card.dart';
+import '../../widgets/resepku_refresh_indicator.dart';
+import '../../widgets/shimmer_widgets.dart';
 import '../auth/login_screen.dart';
 
 class SavedScreen extends StatelessWidget {
   const SavedScreen({super.key});
+
+  Future<void> _onRefresh(BuildContext context) async {
+    context.read<SavedBloc>().add(SavedLoad());
+    // Wait for loading animation to be visible (2 seconds)
+    await Future.delayed(const Duration(milliseconds: 2000));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +50,10 @@ class SavedScreen extends StatelessWidget {
                   child: BlocBuilder<SavedBloc, SavedState>(
                     builder: (context, state) {
                       if (state is SavedLoading) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: 4,
+                          itemBuilder: (context, index) => const ShimmerRecipeCard(),
                         );
                       }
 
@@ -82,76 +90,95 @@ class SavedScreen extends StatelessWidget {
 
                       if (state is SavedLoaded) {
                         if (state.savedRecipes.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                        Icons.bookmark_border_rounded,
-                                        size: 64,
-                                        color: AppColors.textTertiary,
-                                      )
-                                      .animate()
-                                      .fadeIn(duration: 400.ms)
-                                      .scale(begin: const Offset(0.8, 0.8)),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Belum ada resep tersimpan',
-                                    style: AppTextStyles.h4.copyWith(
-                                      color: AppColors.textSecondary,
+                          return ResepkuRefreshIndicatorStateful(
+                            onRefresh: () => _onRefresh(context),
+                            child: SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.6,
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                              Icons.bookmark_border_rounded,
+                                              size: 64,
+                                              color: AppColors.textTertiary,
+                                            )
+                                            .animate()
+                                            .fadeIn(duration: 400.ms)
+                                            .scale(
+                                              begin: const Offset(0.8, 0.8),
+                                            ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Belum ada resep tersimpan',
+                                          style: AppTextStyles.h4.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Simpan resep favorit Anda dari halaman resep',
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(
+                                                color: AppColors.textTertiary,
+                                              ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Simpan resep favorit Anda dari halaman resep',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: AppColors.textTertiary,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           );
                         }
 
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: state.savedRecipes.length,
-                          itemBuilder: (context, index) {
-                            final saved = state.savedRecipes[index];
-                            return Dismissible(
-                              key: Key('saved_${saved.recipe.recipeId}'),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                margin: const EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error,
-                                  borderRadius: BorderRadius.circular(20),
+                        return ResepkuRefreshIndicatorStateful(
+                          onRefresh: () => _onRefresh(context),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: state.savedRecipes.length,
+                            itemBuilder: (context, index) {
+                              final saved = state.savedRecipes[index];
+                              return Dismissible(
+                                key: Key('saved_${saved.recipe.recipeId}'),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete_rounded,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                                child: const Icon(
-                                  Icons.delete_rounded,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              onDismissed: (_) {
-                                context.read<SavedBloc>().add(
-                                  SavedRemove(saved.recipe.recipeId),
-                                );
-                              },
-                              child: RecipeCard(recipe: saved.recipe)
-                                  .animate()
-                                  .fadeIn(
-                                    delay: Duration(milliseconds: 100 * index),
-                                    duration: 400.ms,
-                                  )
-                                  .slideX(begin: 0.2, end: 0),
-                            );
-                          },
+                                onDismissed: (_) {
+                                  context.read<SavedBloc>().add(
+                                    SavedRemove(saved.recipe.recipeId),
+                                  );
+                                },
+                                child: RecipeCard(recipe: saved.recipe)
+                                    .animate()
+                                    .fadeIn(
+                                      delay: Duration(
+                                        milliseconds: 100 * index,
+                                      ),
+                                      duration: 400.ms,
+                                    )
+                                    .slideX(begin: 0.2, end: 0),
+                              );
+                            },
+                          ),
                         );
                       }
 

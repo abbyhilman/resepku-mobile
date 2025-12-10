@@ -10,6 +10,7 @@ import '../../blocs/recipe_detail/recipe_detail_event.dart';
 import '../../blocs/recipe_detail/recipe_detail_state.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../widgets/shimmer_widgets.dart';
 import '../auth/login_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -46,9 +47,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         body: BlocBuilder<RecipeDetailBloc, RecipeDetailState>(
           builder: (context, state) {
             if (state is RecipeDetailLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
-              );
+              return const ShimmerRecipeDetail();
             }
 
             if (state is RecipeDetailError) {

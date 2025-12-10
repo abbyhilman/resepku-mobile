@@ -7,6 +7,9 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../auth/login_screen.dart';
+import 'about_screen.dart';
+import 'help_screen.dart';
+import 'notification_settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -108,37 +111,45 @@ class ProfileScreen extends StatelessWidget {
           _buildMenuItem(
                 icon: Icons.notifications_outlined,
                 title: 'Notifikasi',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationSettingsScreen(),
+                    ),
+                  );
+                },
               )
               .animate()
               .fadeIn(delay: 150.ms, duration: 400.ms)
               .slideX(begin: 0.2, end: 0),
 
           _buildMenuItem(
-                icon: Icons.settings_outlined,
-                title: 'Pengaturan',
-                onTap: () {},
+                icon: Icons.help_outline_rounded,
+                title: 'Bantuan',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpScreen()),
+                  );
+                },
               )
               .animate()
               .fadeIn(delay: 200.ms, duration: 400.ms)
               .slideX(begin: 0.2, end: 0),
 
           _buildMenuItem(
-                icon: Icons.help_outline_rounded,
-                title: 'Bantuan',
-                onTap: () {},
+                icon: Icons.info_outline_rounded,
+                title: 'Tentang Aplikasi',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  );
+                },
               )
               .animate()
               .fadeIn(delay: 250.ms, duration: 400.ms)
-              .slideX(begin: 0.2, end: 0),
-
-          _buildMenuItem(
-                icon: Icons.info_outline_rounded,
-                title: 'Tentang Aplikasi',
-                onTap: () {},
-              )
-              .animate()
-              .fadeIn(delay: 300.ms, duration: 400.ms)
               .slideX(begin: 0.2, end: 0),
 
           const SizedBox(height: 16),

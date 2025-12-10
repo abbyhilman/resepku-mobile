@@ -26,6 +26,15 @@ class IngredientModel extends Equatable {
     return {'name': name, 'quantity': quantity, 'unit': unit};
   }
 
+  factory IngredientModel.fromDbMap(Map<String, dynamic> map) {
+    return IngredientModel(
+      ingredientId: map['id'] as int?,
+      name: map['name'] as String? ?? '',
+      quantity: map['quantity'] as String? ?? '',
+      unit: map['unit'] as String? ?? '',
+    );
+  }
+
   @override
   List<Object?> get props => [ingredientId, name, quantity, unit];
 }

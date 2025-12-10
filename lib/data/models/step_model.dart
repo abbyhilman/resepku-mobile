@@ -19,6 +19,14 @@ class StepModel extends Equatable {
     return {'instruction': instruction};
   }
 
+  factory StepModel.fromDbMap(Map<String, dynamic> map) {
+    return StepModel(
+      stepId: map['id'] as int?,
+      stepNumber: map['step_number'] as int?,
+      instruction: map['instruction'] as String? ?? '',
+    );
+  }
+
   @override
   List<Object?> get props => [stepId, stepNumber, instruction];
 }

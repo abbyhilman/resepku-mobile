@@ -66,6 +66,46 @@ class RecipeModel extends Equatable {
     };
   }
 
+  /// Convert to database map (for SQLite)
+  Map<String, dynamic> toDbMap() {
+    return {
+      'recipe_id': recipeId,
+      'title': title,
+      'description': description,
+      'prep_time_min': prepTimeMin,
+      'image_url': imageUrl,
+      'average_rating': averageRating,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  /// Create from database map (from SQLite)
+  factory RecipeModel.fromDbMap(Map<String, dynamic> map) {
+    return RecipeModel(
+      recipeId: map['recipe_id'] as int,
+      title: map['title'] as String,
+      description: map['description'] as String? ?? '',
+      prepTimeMin: map['prep_time_min'] as int? ?? 0,
+      imageUrl: map['image_url'] as String?,
+      averageRating: _parseRating(map['average_rating']),
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'] as String)
+          : DateTime.now(),
+      ingredients: map['ingredients'] != null
+          ? (map['ingredients'] as List)
+                .map(
+                  (e) => IngredientModel.fromDbMap(e as Map<String, dynamic>),
+                )
+                .toList()
+          : null,
+      steps: map['steps'] != null
+          ? (map['steps'] as List)
+                .map((e) => StepModel.fromDbMap(e as Map<String, dynamic>))
+                .toList()
+          : null,
+    );
+  }
+
   @override
   List<Object?> get props => [
     recipeId,

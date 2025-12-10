@@ -3,6 +3,8 @@ import '../models/recipe_model.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/network/api_error_handler.dart';
+import '../../core/network/connectivity_helper.dart';
+import '../../core/database/database_helper.dart';
 
 class SavedRecipeModel {
   final int id;
@@ -31,6 +33,38 @@ class SavedRecipeModel {
     );
   }
 
+  factory SavedRecipeModel.fromDbMap(Map<String, dynamic> map) {
+    return SavedRecipeModel(
+      id: map['id'] as int,
+      savedAt: DateTime.parse(map['saved_at'] as String),
+      recipe: RecipeModel(
+        recipeId: map['recipe_id'] as int,
+        title: map['title'] as String,
+        description: map['description'] as String? ?? '',
+        prepTimeMin: map['prep_time_min'] as int? ?? 0,
+        imageUrl: map['image_url'] as String?,
+        averageRating: _parseRating(map['average_rating']),
+        createdAt: map['created_at'] != null
+            ? DateTime.parse(map['created_at'] as String)
+            : DateTime.now(),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toDbMap() {
+    return {
+      'id': id,
+      'recipe_id': recipe.recipeId,
+      'title': recipe.title,
+      'description': recipe.description,
+      'prep_time_min': recipe.prepTimeMin,
+      'image_url': recipe.imageUrl,
+      'average_rating': recipe.averageRating,
+      'created_at': recipe.createdAt.toIso8601String(),
+      'saved_at': savedAt.toIso8601String(),
+    };
+  }
+
   static double _parseRating(dynamic rating) {
     if (rating == null) return 0.0;
     if (rating is double) return rating;
@@ -42,26 +76,54 @@ class SavedRecipeModel {
 
 class SavedRepository {
   final DioClient _dioClient;
+  final DatabaseHelper _dbHelper;
+  final ConnectivityHelper _connectivityHelper;
 
-  SavedRepository(this._dioClient);
+  SavedRepository(this._dioClient, this._dbHelper, this._connectivityHelper);
 
   Future<List<SavedRecipeModel>> getSavedRecipes() async {
-    try {
-      final response = await _dioClient.get(ApiEndpoints.savedRecipes);
+    final hasConnection = await _connectivityHelper.hasConnection();
 
-      if (response.data['success'] == true) {
-        return (response.data['data'] as List)
-            .map((e) => SavedRecipeModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } else {
-        throw Exception(
-          ApiErrorHandler.translate(
-            response.data['message'] ?? 'Gagal memuat resep tersimpan',
-          ),
-        );
+    if (hasConnection) {
+      try {
+        final response = await _dioClient.get(ApiEndpoints.savedRecipes);
+
+        if (response.data['success'] == true) {
+          final savedRecipes = (response.data['data'] as List)
+              .map((e) => SavedRecipeModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+
+          // Cache saved recipes
+          if (savedRecipes.isNotEmpty) {
+            final maps = savedRecipes.map((s) => s.toDbMap()).toList();
+            await _dbHelper.cacheSavedRecipes(maps);
+          }
+
+          return savedRecipes;
+        } else {
+          throw Exception(
+            ApiErrorHandler.translate(
+              response.data['message'] ?? 'Gagal memuat resep tersimpan',
+            ),
+          );
+        }
+      } on DioException {
+        // Try cache on network error
+        return _getSavedRecipesFromCache();
       }
-    } on DioException catch (e) {
-      throw Exception(ApiErrorHandler.handleDioError(e));
+    } else {
+      // Offline - get from cache
+      return _getSavedRecipesFromCache();
+    }
+  }
+
+  Future<List<SavedRecipeModel>> _getSavedRecipesFromCache() async {
+    try {
+      final cachedMaps = await _dbHelper.getCachedSavedRecipes();
+      return cachedMaps.map((m) => SavedRecipeModel.fromDbMap(m)).toList();
+    } catch (e) {
+      print('❌ Error getting saved recipes from cache: $e');
+      return [];
     }
   }
 
